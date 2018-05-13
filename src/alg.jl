@@ -95,11 +95,11 @@ function run_abc(plan::abc_pmc_plan_type, ss_true, pop::abc_population_type; ver
   #
 
   # Uncomment for history output at end of run to terminal
-  #
+  #=
   eps_arr = []
   mean_arr = []
   std_arr = []  
-  #
+  =#
 
   for t in 1:plan.num_max_times
     local new_pop
@@ -130,11 +130,11 @@ function run_abc(plan::abc_pmc_plan_type, ss_true, pop::abc_population_type; ver
         
     end
     # Uncomment for history output at end of run to terminal
-    #
+    #=
     push!(eps_arr, epsilon)
     push!(mean_arr, mean(pop.theta,2)[1])
     push!(std_arr, std(pop.theta,2)[1])
-    #
+    =#
     #if epsilon < plan.target_epsilon  # stop once acheive goal
     if maximum(pop.dist) < plan.target_epsilon  # stop once acheive goal
        println("# Reached ",epsilon," after ", t, " generations.")
@@ -164,13 +164,13 @@ function run_abc(plan::abc_pmc_plan_type, ss_true, pop::abc_population_type; ver
     #println("mean(theta) = ",[ sum(pop.theta[i,:])/size(pop.theta,2) for i in 1:size(pop.theta,1) ])
 
   # Uncomment for history output at end of run to terminal
-  #
+  #=
   if verbose
      println("Epsilon history = ", eps_arr)
      println("Mean history = ", mean_arr)
      println("Std Dev. history = ", std_arr)
   end
-  #
+  =#
 
   # Uncomment for generation info output to log file
   #
