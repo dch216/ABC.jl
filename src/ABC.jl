@@ -44,7 +44,6 @@ import Compat: @compat
 
 # until added to distributions, use our own
 include("GaussianMixtureModelCommonCovar.jl")
-#include("CompositeDistributions.jl")
 
 include("types.jl")
 include("util.jl")
@@ -55,5 +54,12 @@ include("alg_parallel.jl")
 include("make_proposal.jl")
 include("log.jl")
 #include("emulator.jl")
+
+
+# Bonus code!
+include("composite.jl")
+export CompositeDistributions
+include("beta_linear_transformed.jl")
+export TransformedBetaDistributions
 
 end # module
