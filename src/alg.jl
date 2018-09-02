@@ -1,4 +1,4 @@
-using JLD
+#using JLD
 
 function generate_theta(plan::abc_pmc_plan_type, sampler::Distribution, ss_true, epsilon::Float64; num_max_attempt = plan.num_max_attempt)
       @assert(epsilon>=0.0)
@@ -14,7 +14,7 @@ function generate_theta(plan::abc_pmc_plan_type, sampler::Distribution, ss_true,
       all_attempts = num_max_attempt
       for a in 1:num_max_attempt
          theta_star = rand(sampler)
-         if issubtype(typeof(theta_star),Real)   # in case return a scalar, make into array
+         if (typeof(theta_star) <: Real)   # in case return a scalar, make into array
             theta_star = fill(theta_star, length(plan.prior))  ### TODO: Univariate uniform prior returns length 1 -> need to generalize for multiple bins.
             #theta_star = [theta_star]
          end
@@ -23,7 +23,11 @@ function generate_theta(plan::abc_pmc_plan_type, sampler::Distribution, ss_true,
          attempts += 1
          data_star = plan.gen_data(theta_star)
          ss_star = plan.calc_summary_stats(data_star)
-         dist_star = plan.calc_dist(ss_true,ss_star)
+
+         accept_prob = 0.
+         local dist_star
+         for d in 1:plan.num_dist_per_obs
+           dist_star = plan.calc_dist(ss_true,ss_star)
          #=
          if plan.save_params
            push!(summary_stats_log.theta, theta_star)
@@ -35,17 +39,24 @@ function generate_theta(plan::abc_pmc_plan_type, sampler::Distribution, ss_true,
            push!(summary_stats_log.dist, dist_star)
          end
          =#
-         if dist_star < dist_best
-            dist_best = dist_star
-            theta_best = copy(theta_star)
-            push_to_abc_log!(accept_log,plan,theta_star,ss_star,dist_star)
-         else
-            push_to_abc_log!(reject_log,plan,theta_star,ss_star,dist_star)
+           if dist_star < dist_best
+              dist_best = dist_star
+              theta_best = copy(theta_star)
+           end
+           if(dist_star < epsilon)
+             accept_prob += 1.0
+           end
          end
+         accept_prob /= plan.num_dist_per_obs 
 
-         if(dist_best < epsilon)
-            all_attempts = a
-            break
+         accept = rand() < accept_prob
+
+         if(!accept)
+              push_to_abc_log!(reject_log,plan,theta_star,ss_star,dist_star)
+         else
+              push_to_abc_log!(accept_log,plan,theta_star,ss_star,dist_star)
+              all_attempts = a
+              break
          end
       end
       if dist_best == Inf
@@ -117,13 +128,13 @@ function run_abc(plan::abc_pmc_plan_type, ss_true, pop::abc_population_type; ver
     end
     pop = new_pop
     if verbose && (t%print_every == 0)
-       println("# t= ",t, " eps= ",epsilon, " med(d)= ",median(pop.dist), " attempts= ",median(attempts), " ",maximum(attempts), " reps= ", sum(pop.repeats), " ess= ",ess(pop.weights,pop.repeats)) #," mean(theta)= ",mean(pop.theta,2) )#) #, " tau= ",diag(tau) ) #
-       println("Mean(theta)= ", mean(pop.theta, 2), " Stand. Dev.(theta)= ", std(pop.theta, 2))
+       println("# t= ",t, " eps= ",epsilon, " med(d)= ",median(pop.dist), " attempts= ",median(attempts), " ",maximum(attempts), " reps= ", sum(pop.repeats), " ess= ",ess(pop.weights,pop.repeats)) #," mean(theta)= ",mean(pop.theta,dims=2) )#) #, " tau= ",diag(tau) ) #
+       println("Mean(theta)= ", mean(pop.theta, dims=2), " Stand. Dev.(theta)= ", std(pop.theta, dims=2))
 
        # Uncomment for generation info output to log file
        #
        println(f_log, "# t= ",t, " eps= ",epsilon, " med(d)= ",median(pop.dist), " attempts= ",median(attempts), " ",maximum(attempts), " reps= ", sum(pop.repeats), " ess= ",ess(pop.weights,pop.repeats))
-       println(f_log, "Mean(theta)= ", mean(pop.theta, 2), " Stand. Dev.(theta)= ", std(pop.theta, 2))
+       println(f_log, "Mean(theta)= ", mean(pop.theta, dims=2), " Stand. Dev.(theta)= ", std(pop.theta, dims=2))
        flush(f_log)
        #save(string("gen-",t,".jld"), "pop_out", pop, "ss_true", ss_true)
        #
@@ -132,8 +143,8 @@ function run_abc(plan::abc_pmc_plan_type, ss_true, pop::abc_population_type; ver
     # Uncomment for history output at end of run to terminal
     #=
     push!(eps_arr, epsilon)
-    push!(mean_arr, mean(pop.theta,2)[1])
-    push!(std_arr, std(pop.theta,2)[1])
+    push!(mean_arr, mean(pop.theta,dims=2)[1])
+    push!(std_arr, std(pop.theta,dims=2)[1])
     =#
     #if epsilon < plan.target_epsilon  # stop once acheive goal
     if maximum(pop.dist) < plan.target_epsilon  # stop once acheive goal
