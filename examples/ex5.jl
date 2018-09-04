@@ -56,7 +56,7 @@ calc_dist_l2(x::Array{Float64},y::Array{Float64}) = sum(abs2.(x.-y))
 
 #using Distributions 
 using SpecialFunctions
-using Statistics
+using Compat.Statistics
 
 # https://en.wikipedia.org/wiki/Trigamma_function
 function trigamma_x_gr_4(x::T) where T<: Real
@@ -88,8 +88,8 @@ function make_proposal_dist_multidim_beta(theta::AbstractArray{Float64,2}, weigh
   end
   # For algorithm, see https://scholarsarchive.byu.edu/cgi/viewcontent.cgi?article=2613&context=etd 
   function fit_beta_mle(x::AbstractArray{T,1}; tol::T = 1e-6, max_it::Int64 = 10, init_guess::AbstractArray{T,1} = Array{T}(undef,0), w::AbstractArray{T,1} = Array{T}(undef,0), verbose::Bool = false ) where T<: Real
-    lnxbar =   length(w)>1 ? Statistics.mean(log.(x),AnalyticWeights(w)) : Statistics.mean(log.(x))
-    ln1mxbar = length(w)>1 ? Statistics.mean(log.(1.0.-x),AnalyticWeights(w)) : Statistics.mean(log.(1.0.-x))
+    lnxbar =   length(w)>1 ? Compat.Statistics.mean(log.(x),AnalyticWeights(w)) : Compat.Statistics.mean(log.(x))
+    ln1mxbar = length(w)>1 ? Compat.Statistics.mean(log.(1.0.-x),AnalyticWeights(w)) : Compat.Statistics.mean(log.(1.0.-x))
 
     function itterate( mle_guess::Vector{T} ) where T<:Real
        (alpha, beta) = (mle_guess[1], mle_guess[2])
@@ -103,8 +103,8 @@ function make_proposal_dist_multidim_beta(theta::AbstractArray{Float64,2}, weigh
   
     local mle_new 
     if length(init_guess) != 2
-       xbar = length(w)>1 ? Statistics.mean(x,AnalyticWeights(w)) : Statistics.mean(x)
-       vbar = length(w)>1 ? Statistics.varm(x,xbar,AnalyticWeights(w)) : Statistics.varm(x,xbar)
+       xbar = length(w)>1 ? Compat.Statistics.mean(x,AnalyticWeights(w)) : Compat.Statistics.mean(x)
+       vbar = length(w)>1 ? Compat.Statistics.varm(x,xbar,AnalyticWeights(w)) : Compat.Statistics.varm(x,xbar)
        mle_new = (vbar < xbar*(1.0-xbar)) ? [mom_alpha(xbar, vbar), mom_beta(xbar,vbar)] : ones(T,2)
     else
        mle_new = init_guess
@@ -131,8 +131,8 @@ function make_proposal_dist_multidim_beta(theta::AbstractArray{Float64,2}, weigh
     return mle_new
   end
   function make_beta(x::AbstractArray{T,1}, w::AbstractArray{T,1}; 
-              mean::T = Statistics.mean(x,AnalyticWeights(w)), 
-              var::T = Statistics.varm(x,xbar,AnalyticWeights(w)) ) where T<:Real
+              mean::T = Compat.Statistics.mean(x,AnalyticWeights(w)), 
+              var::T = Compat.Statistics.varm(x,xbar,AnalyticWeights(w)) ) where T<:Real
        alpha_beta = (var < mean*(1.0-mean)) ? [mom_alpha(mean, var), mom_beta(mean,var)] : ones(T,2)
        if any(alpha_beta.<=zero(T))
           alpha_beta = fit_beta_mle(x, w=w, init_guess=alpha_beta, verbose=true)
@@ -143,8 +143,8 @@ function make_proposal_dist_multidim_beta(theta::AbstractArray{Float64,2}, weigh
        Beta(alpha_beta[1], alpha_beta[2])
   end
   function make_beta_transformed(x::AbstractArray{T,1}, w::AbstractArray{T,1}; xmin::T=zero(T), xmax::T=one(T),
-              mean::T = Statistics.mean(x,AnalyticWeights(w)), 
-              var::T = Statistics.varm(x,xbar,AnalyticWeights(w)) ) where T<:Real
+              mean::T = Compat.Statistics.mean(x,AnalyticWeights(w)), 
+              var::T = Compat.Statistics.varm(x,xbar,AnalyticWeights(w)) ) where T<:Real
        alpha_beta = (var < mean*(1.0-mean)) ? [mom_alpha(mean, var), mom_beta(mean,var)] : ones(T,2)
        if any(alpha_beta.<=zero(T))
           alpha_beta = fit_beta_mle(x, w=w, init_guess=alpha_beta, verbose=true)
