@@ -201,7 +201,7 @@ function run_abc(plan::abc_pmc_plan_type, ss_true; verbose::Bool = false, print_
 end
 
 function choose_epsilon_adaptive(pop::abc_population_type, sampler::Distribution; min_quantile::Real = 1.0/sqrt(size(pop.theta,2)) )
-  sampler_logpdf = logpdf(sampler, pop.theta)
+  sampler_logpdf = Distributions.logpdf(sampler, pop.theta)
   target_quantile_this_itteration = min(1.0, exp(-maximum(sampler_logpdf .- pop.logpdf)) )
   if target_quantile_this_itteration > 1.0
      target_quantile_this_itteration = 1.0
